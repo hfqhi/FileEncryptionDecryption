@@ -1,0 +1,30 @@
+{
+  "name": "file-encryptian",
+  "version": "1.0.0",
+  "description": "File encryption application",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder"
+  },
+  "build": {
+    "appId": "com.fileencryptian.app",
+    "productName": "File EncrypTian",
+    "win": {
+      "target": "nsis",
+      "icon": "build/icon.ico",
+      "sign": null
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    }
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "electron": "^39.2.3",
+    "electron-builder": "^24.9.1"
+  }
+}

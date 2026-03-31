@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File EncrypTian</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #1a1a1a;
+            color: #e0e0e0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            background-color: #2d2d2d;
+            padding: 30px;
+            border-radius: 8px;
+            max-width: 500px;
+            width: 100%;
+        }
+
+        h1 {
+            margin-bottom: 25px;
+            color: #ffffff;
+            font-size: 24px;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #b0b0b0;
+        }
+
+        input[type="file"] {
+            width: 100%;
+            padding: 10px;
+            background-color: #3a3a3a;
+            border: 1px solid #4a4a4a;
+            border-radius: 4px;
+            color: #e0e0e0;
+            cursor: pointer;
+        }
+
+        input[type="file"]::file-selector-button {
+            padding: 8px 16px;
+            background-color: #4a4a4a;
+            color: #e0e0e0;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+            transition: background-color 0.3s;
+        }
+
+        input[type="file"]::file-selector-button:hover {
+            background-color: #5a5a5a;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            background-color: #3a3a3a;
+            border: 1px solid #4a4a4a;
+            border-radius: 4px;
+            color: #e0e0e0;
+            font-size: 16px;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            background-color: #4a90e2;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #357abd;
+        }
+
+        button:disabled {
+            background-color: #555;
+            cursor: not-allowed;
+        }
+
+        .message {
+            margin-top: 20px;
+            padding: 12px;
+            border-radius: 4px;
+            display: none;
+        }
+
+        .message.success {
+            background-color: #2d5016;
+            color: #7ed321;
+            display: block;
+        }
+
+        .message.error {
+            background-color: #5a1616;
+            color: #ff6b6b;
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>File EncrypTian</h1>
+        <div class="input-group">
+            <label for="fileInput">Select File</label>
+            <input type="file" id="fileInput">
+        </div>
+        <div class="input-group">
+            <label for="pinInput">Enter 4-Digit PIN</label>
+            <input type="text" id="pinInput" maxlength="4" pattern="[0-9]{4}" placeholder="0000">
+        </div>
+        <button id="encryptBtn">Encrypt File</button>
+        <div id="message" class="message"></div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <script>
+        // Get references to HTML elements using getElementById method
+        const fileInput = document.getElementById('fileInput');
+        const pinInput = document.getElementById('pinInput');
+        const encryptBtn = document.getElementById('encryptBtn');
+        const message = document.getElementById('message');
+
+        let selectedFile = null;
+
+        // Event listener: Detects when user clicks the file input
+        fileInput.addEventListener('click', async function(e) {
+            e.preventDefault();
+            // Clear any previous messages when a new file is selected
+            message.className = 'message';
+            message.textContent = '';
+            
+            // Use Electron API to select file
+            selectedFile = await window.electronAPI.selectFile();
+            
+            // Update the file input display
+            if (selectedFile) {
+                const dataTransfer = new DataTransfer();
+                const file = new File([], selectedFile.name);
+                dataTransfer.items.add(file);
+                fileInput.files = dataTransfer.files;
+            }
+        });
+
+        // Event listener: Validates PIN input to accept only numbers
+        pinInput.addEventListener('input', function(e) {
+            // Replace method: Removes any non-digit characters using regex /[^0-9]/g
+            this.value = this.value.replace(/[^0-9]/g, '');
+            // Clear message when user types
+            message.className = 'message';
+            message.textContent = '';
+        });
+
+        // Event listener: Clears message when user clicks on PIN input field
+        pinInput.addEventListener('click', function() {
+            message.className = 'message';
+            message.textContent = '';
+        });
+
+        // Event listener: Handles the encryption process when encrypt button is clicked
+        encryptBtn.addEventListener('click', async function() {
+            const file = selectedFile; // Get the selected file from Electron API
+            const pin = pinInput.value; // Get the PIN value entered by user
+
+            // Validation: Check if a file was selected
+            if (!file) {
+                showMessage('Please select a file', 'error');
+                return; // Exit function if no file
+            }
+
+            // Validation: Check if PIN is exactly 4 digits using regex test method
+            if (pin.length !== 4 || !/^\d{4}$/.test(pin)) {
+                showMessage('PIN must be exactly 4 digits', 'error');
+                return; // Exit function if invalid PIN
+            }
+
+            try {
+                // Disable button to prevent multiple clicks during encryption
+                encryptBtn.disabled = true;
+                showMessage('Encrypting file...', 'success');
+
+                // Convert buffer array back to Uint8Array
+                const arrayBuffer = new Uint8Array(file.buffer).buffer;
+                
+                // Convert binary data to CryptoJS WordArray format for encryption
+                const wordArray = CryptoJS.lib.WordArray.create(arrayBuffer);
+                
+                // AES Encryption method: Encrypt the file content using the PIN as the key
+                const encrypted = CryptoJS.AES.encrypt(wordArray, pin).toString();
+                
+                // SHA-256 Hash method: Create a one-way hash of the PIN for verification
+                // This hash allows the decryptor to identify the correct PIN without storing it
+                const pinHash = CryptoJS.SHA256(pin).toString();
+                
+                // Create JSON object containing encrypted data and metadata
+                const encryptedData = {
+                    fileName: file.name, // Original file name
+                    fileType: '', // Original file MIME type (not available in Electron file dialog)
+                    encryptedContent: encrypted, // AES encrypted file content
+                    verification: pinHash // SHA-256 hash of PIN for verification
+                };
+
+                // Convert JavaScript object to JSON string using stringify method
+                const jsonString = JSON.stringify(encryptedData);
+                
+                // Save encrypted file and delete original using Electron API
+                await window.electronAPI.saveEncryptedFile({
+                    originalPath: file.path,
+                    encryptedData: jsonString,
+                    fileName: file.name
+                });
+
+                // Show success message and clear input fields
+                showMessage('File encrypted successfully!', 'success');
+                fileInput.value = '';
+                pinInput.value = '';
+                selectedFile = null;
+                
+            } catch (error) {
+                // Error handling: Display any errors that occur during encryption
+                showMessage('Encryption failed: ' + error.message, 'error');
+            } finally {
+                // Re-enable button after encryption completes (success or failure)
+                encryptBtn.disabled = false;
+            }
+        });
+
+        // Helper function: Displays messages to the user
+        function showMessage(text, type) {
+            message.textContent = text; // Set message text
+            message.className = 'message ' + type; // Set CSS class for styling (success/error)
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File DecryptJohn</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #1a1a1a;
+            color: #e0e0e0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            background-color: #2d2d2d;
+            padding: 30px;
+            border-radius: 8px;
+            max-width: 500px;
+            width: 100%;
+        }
+
+        h1 {
+            margin-bottom: 25px;
+            color: #ffffff;
+            font-size: 24px;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #b0b0b0;
+        }
+
+        input[type="file"] {
+            width: 100%;
+            padding: 10px;
+            background-color: #3a3a3a;
+            border: 1px solid #4a4a4a;
+            border-radius: 4px;
+            color: #e0e0e0;
+            cursor: pointer;
+        }
+
+        input[type="file"]::file-selector-button {
+            padding: 8px 16px;
+            background-color: #4a4a4a;
+            color: #e0e0e0;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+            transition: background-color 0.3s;
+        }
+
+        input[type="file"]::file-selector-button:hover {
+            background-color: #5a5a5a;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            background-color: #3a3a3a;
+            border: 1px solid #4a4a4a;
+            border-radius: 4px;
+            color: #e0e0e0;
+            font-size: 16px;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            background-color: #4a90e2;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            margin-bottom: 10px;
+        }
+
+        button:hover {
+            background-color: #357abd;
+        }
+
+        button:disabled {
+            background-color: #555;
+            cursor: not-allowed;
+        }
+
+        button.secondary {
+            background-color: #5a5a5a;
+        }
+
+        button.secondary:hover {
+            background-color: #6a6a6a;
+        }
+
+        .decrypt-section {
+            display: none;
+        }
+
+        .decrypt-section.show {
+            display: block;
+        }
+
+        .info-box {
+            margin-top: 20px;
+            margin-bottom: 20px;
+            padding: 15px;
+            background-color: #3a3a3a;
+            border-radius: 4px;
+            display: none;
+        }
+
+        .info-box.show {
+            display: block;
+        }
+
+        .info-item {
+            margin-bottom: 10px;
+        }
+
+        .info-label {
+            color: #b0b0b0;
+            margin-bottom: 5px;
+        }
+
+        .info-value {
+            color: #ffffff;
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .message {
+            margin-top: 20px;
+            padding: 12px;
+            border-radius: 4px;
+            display: none;
+        }
+
+        .message.success {
+            background-color: #2d5016;
+            color: #7ed321;
+            display: block;
+        }
+
+        .message.error {
+            background-color: #5a1616;
+            color: #ff6b6b;
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>File DecryptJohn</h1>
+        <div class="input-group">
+            <label for="fileInput">Select Encrypted File</label>
+            <input type="file" id="fileInput" accept=".encrypted">
+        </div>
+        
+        <button id="showPinBtn" class="secondary">Show Password</button>
+        
+        <div id="infoBox" class="info-box">
+            <div class="info-item">
+                <div class="info-label">File Name</div>
+                <div class="info-value" id="fileName"></div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">Password</div>
+                <div class="info-value" id="pinDisplay"></div>
+            </div>
+        </div>
+        
+        <div id="decryptSection" class="decrypt-section">
+            <div class="input-group">
+                <label for="pinInput">Enter Password</label>
+                <input type="text" id="pinInput" maxlength="4" pattern="[0-9]{4}" placeholder="0000">
+            </div>
+            <button id="decryptBtn">Decrypt and Download</button>
+        </div>
+        <div id="message" class="message"></div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <script>
+        // Get references to HTML elements using getElementById method
+        const fileInput = document.getElementById('fileInput');
+        const showPinBtn = document.getElementById('showPinBtn');
+        const infoBox = document.getElementById('infoBox');
+        const fileName = document.getElementById('fileName');
+        const pinDisplay = document.getElementById('pinDisplay');
+        const decryptSection = document.getElementById('decryptSection');
+        const pinInput = document.getElementById('pinInput');
+        const decryptBtn = document.getElementById('decryptBtn');
+        const message = document.getElementById('message');
+
+        // Variable to store encrypted file data in memory
+        let encryptedFileData = null;
+        let selectedFile = null;
+
+        // Event listener: Detects when user clicks the file input
+        fileInput.addEventListener('click', async function(e) {
+            e.preventDefault();
+            encryptedFileData = null; // Clear cached data
+            infoBox.classList.remove('show'); // Hide info box
+            decryptSection.classList.remove('show'); // Hide decrypt section
+            message.className = 'message'; // Reset message styling
+            message.textContent = ''; // Clear message text
+            
+            // Use Electron API to select file
+            selectedFile = await window.electronAPI.selectFile();
+            
+            // Update the file input display
+            if (selectedFile) {
+                const dataTransfer = new DataTransfer();
+                const file = new File([], selectedFile.path.split(/[\\/]/).pop());
+                dataTransfer.items.add(file);
+                fileInput.files = dataTransfer.files;
+            }
+        });
+
+        // Event listener: Validates PIN input to accept only numbers
+        pinInput.addEventListener('input', function(e) {
+            // Replace method: Removes any non-digit characters using regex /[^0-9]/g
+            this.value = this.value.replace(/[^0-9]/g, '');
+            message.className = 'message';
+            message.textContent = '';
+        });
+
+        // Event listener: Brute-force attack to find the correct PIN
+        showPinBtn.addEventListener('click', async function() {
+            const file = selectedFile; // Get selected encrypted file
+
+            // Validation: Check if file was selected
+            if (!file) {
+                showMessage('Please select an encrypted file', 'error');
+                infoBox.classList.remove('show');
+                return;
+            }
+
+            try {
+                // Disable button during processing
+                showPinBtn.disabled = true;
+                
+                // Read file as text and parse JSON using JSON.parse() method
+                const text = file.content;
+                const data = JSON.parse(text);
+
+                // Validation: Check if required fields exist in the encrypted file
+                if (!data.fileName || !data.verification) {
+                    throw new Error('Invalid encrypted file format');
+                }
+
+                // Cache the encrypted data for later use
+                encryptedFileData = data;
+
+                let foundPin = null; // Variable to store discovered PIN
+
+                // Brute-force method: Try all possible 4-digit PINs (0000-9999)
+                for (let pin = 0; pin <= 9999; pin++) {
+                    // Convert number to 4-digit string with leading zeros using padStart method
+                    const pinStr = pin.toString().padStart(4, '0');
+                    
+                    // SHA-256 Hash method: Hash the current PIN attempt
+                    const pinHash = CryptoJS.SHA256(pinStr).toString();
+                    
+                    // Compare the hashed PIN with the stored verification hash
+                    if (pinHash === data.verification) {
+                        foundPin = pinStr; // Store the matching PIN
+                        break; // Exit loop when PIN is found
+                    }
+                }
+
+                // Display the discovered PIN and file information
+                fileName.textContent = data.fileName;
+                pinDisplay.textContent = foundPin;
+                infoBox.classList.add('show'); // Show info box
+                decryptSection.classList.add('show'); // Show decrypt input section
+                message.className = 'message';
+                message.textContent = '';
+                
+            } catch (error) {
+                // Error handling: Display errors encountered during file reading
+                showMessage('Error reading file: ' + error.message, 'error');
+                infoBox.classList.remove('show');
+                decryptSection.classList.remove('show');
+            } finally {
+                // Re-enable button after process completes
+                showPinBtn.disabled = false;
+            }
+        });
+
+        // Event listener: Handles file decryption when decrypt button is clicked
+        decryptBtn.addEventListener('click', async function() {
+            const file = selectedFile;
+            const pin = pinInput.value; // Get PIN entered by user
+
+            // Validation: Check if file was selected
+            if (!file) {
+                showMessage('Please select an encrypted file', 'error');
+                return;
+            }
+
+            // Validation: Check if PIN is exactly 4 digits using regex test method
+            if (pin.length !== 4 || !/^\d{4}$/.test(pin)) {
+                showMessage('Password must be exactly 4 digits', 'error');
+                return;
+            }
+
+            try {
+                // Disable button during decryption
+                decryptBtn.disabled = true;
+                showMessage('Decrypting file...', 'success');
+
+                let data = encryptedFileData; // Use cached data if available
+                
+                // If no cached data, read and parse the file again
+                if (!data) {
+                    const text = file.content;
+                    data = JSON.parse(text);
+                }
+
+                // SHA-256 verification: Hash the entered PIN
+                const pinHash = CryptoJS.SHA256(pin).toString();
+                
+                // Compare hashed PIN with stored verification hash
+                if (pinHash !== data.verification) {
+                    showMessage('Incorrect password', 'error');
+                    return; // Exit if PIN doesn't match
+                }
+
+                // AES Decryption method: Decrypt the file content using the correct PIN
+                const decrypted = CryptoJS.AES.decrypt(data.encryptedContent, pin);
+                
+                // Convert CryptoJS WordArray back to Uint8Array (binary data)
+                const typedArray = convertWordArrayToUint8Array(decrypted);
+
+                // Save decrypted file and delete encrypted file using Electron API
+                await window.electronAPI.saveDecryptedFile({
+                    encryptedPath: file.path,
+                    decryptedData: Array.from(typedArray),
+                    fileName: data.fileName
+                });
+
+                // Show success message and reset UI
+                showMessage('File decrypted successfully', 'success');
+                fileInput.value = '';
+                pinInput.value = '';
+                infoBox.classList.remove('show');
+                decryptSection.classList.remove('show');
+                encryptedFileData = null;
+                selectedFile = null;
+                
+            } catch (error) {
+                // Error handling: Display decryption errors
+                showMessage('Decryption failed: ' + error.message, 'error');
+            } finally {
+                // Re-enable button after decryption completes
+                decryptBtn.disabled = false;
+            }
+        });
+
+        // Helper function: Converts CryptoJS WordArray to standard Uint8Array
+        function convertWordArrayToUint8Array(wordArray) {
+            const words = wordArray.words; // Get word array (32-bit integers)
+            const sigBytes = wordArray.sigBytes; // Get number of significant bytes
+            const u8 = new Uint8Array(sigBytes); // Create byte array
+            
+            // Loop through each byte and extract it from the word array
+            for (let i = 0; i < sigBytes; i++) {
+                // Bitwise operations: Extract individual bytes from 32-bit words
+                // >>> is unsigned right shift operator
+                // & 0xff extracts the last 8 bits (1 byte)
+                u8[i] = (words[i >>> 2] >>> (24 - (i % 4) * 8)) & 0xff;
+            }
+            
+            return u8;
+        }
+
+        // Helper function: Displays messages to the user
+        function showMessage(text, type) {
+            message.textContent = text; // Set message text
+            message.className = 'message ' + type; // Set CSS class for styling (success/error)
+        }
+    </script>
+</body>
+</html>
