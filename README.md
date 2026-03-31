@@ -3,10 +3,10 @@
 A desktop application for securely encrypting and decrypting files, built with **Electron JS** using HTML and JavaScript.
 
 ![Version](https://img.shields.io/badge/version-1.0.0-blue)
-![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey)
+![Platform](https://img.shields.io/badge/platform-Windows-lightgrey)
 ![Language](https://img.shields.io/badge/language-JavaScript%20%7C%20HTML-yellow)
 ![Framework](https://img.shields.io/badge/framework-Electron-47848F?logo=electron)
-![License](https://img.shields.io/badge/license-MIT-green)
+![License](https://img.shields.io/badge/license-unlicensed-red)
 
 ---
 
@@ -30,7 +30,7 @@ A desktop application for securely encrypting and decrypting files, built with *
 
 ## Overview
 
-**File Encryption & Decryption** is a cross-platform desktop application that allows users to protect sensitive files by encrypting them with a password or key, and to restore them by decrypting previously encrypted files. Built on top of Electron JS, the app brings the power of Node.js cryptography into an accessible desktop interface powered by web technologies (HTML, CSS, JavaScript).
+**File Encryption & Decryption** is a desktop application that allows users to protect sensitive files by encrypting them with a **4-digit PIN**, and to restore them by decrypting previously encrypted files. Built on top of Electron JS, the app brings the power of Node.js cryptography into an accessible desktop interface powered by web technologies (HTML and JavaScript).
 
 Whether you want to secure personal documents, sensitive data, or any file type, this app provides a straightforward interface to do so without needing command-line knowledge.
 
@@ -38,9 +38,9 @@ Whether you want to secure personal documents, sensitive data, or any file type,
 
 ## Features
 
-- 🔒 **File Encryption** — Select any file and encrypt it with a secure key/password
+- 🔒 **File Encryption** — Select any file and encrypt it with a 4-digit PIN
 - 🔓 **File Decryption** — Restore encrypted files back to their original form
-- 🖥️ **Cross-platform** — Works on Windows, macOS, and Linux
+- 🖥️ **Desktop App** — Runs as a native desktop application via Electron JS
 - 🗂️ **File Picker** — Native OS file selection dialog for choosing input files
 - 💡 **Simple UI** — Clean and intuitive HTML-based interface
 - 📦 **Standalone Installer** — Packaged as a native desktop installer (no browser needed)
@@ -52,7 +52,7 @@ Whether you want to secure personal documents, sensitive data, or any file type,
 | Technology | Role |
 |---|---|
 | [Electron JS](https://www.electronjs.org/) | Desktop application framework |
-| HTML / CSS | User interface |
+| HTML / CSS | User interface (CSS written inline within index.html) |
 | JavaScript | Application logic & crypto operations |
 | Node.js `crypto` module | Encryption/decryption implementation |
 
@@ -66,9 +66,8 @@ FileEncryptionDecryption/
 ├── Source Codes/
 │   ├── main.js              # Electron main process (app entry point)
 │   ├── index.html           # Main UI (renderer process)
-│   ├── renderer.js          # Frontend logic (file handling, UI events)
-│   ├── package.json         # Project metadata and dependencies
-│   └── ...                  # Additional assets/stylesheets
+│   ├── preload.js           # Preload script (bridges main and renderer processes)
+│   └── package.json         # Project metadata and dependencies
 │
 └── Application Documentation.pdf   # Full app documentation
 ```
@@ -133,19 +132,6 @@ npm install --save-dev electron-builder
 npm run build
 ```
 
-Or, to target a specific platform:
-
-```bash
-# Windows
-npm run build -- --win
-
-# macOS
-npm run build -- --mac
-
-# Linux
-npm run build -- --linux
-```
-
 > Pre-built installers for **v1.0.0** are also available in the [Releases](https://github.com/hfqhi/FileEncryptionDecryption/releases/tag/v1.0.0) section.
 
 ---
@@ -156,7 +142,7 @@ npm run build -- --linux
 
 1. Launch the application.
 2. Click **"Select File"** to browse and choose the file you want to encrypt.
-3. Enter an **encryption key/password** in the provided input field.
+3. Enter a **4-digit PIN** (numbers only) in the provided input field.
 4. Click **"Encrypt"**.
 5. The encrypted output file will be saved to your chosen destination.
 
@@ -164,19 +150,19 @@ npm run build -- --linux
 
 1. Launch the application.
 2. Click **"Select File"** and choose the previously encrypted file.
-3. Enter the **same key/password** used during encryption.
+3. Enter the **same 4-digit PIN** used during encryption.
 4. Click **"Decrypt"**.
 5. The original file will be restored and saved.
 
-> ⚠️ **Important:** If you lose or forget the encryption key, the file **cannot be recovered**. Always store your key in a safe place.
+> ⚠️ **Important:** If you lose or forget your 4-digit PIN, the file **cannot be recovered**. Always remember or safely note down your PIN.
 
 ---
 
 ## Security Notes
 
-- Encryption is handled using Node.js's built-in `crypto` module.
-- Files are encrypted using a symmetric encryption algorithm (e.g., AES).
-- The encryption key is never stored by the application — it is the user's sole responsibility to remember or securely store their key.
+- Files are encrypted using **AES (Advanced Encryption Standard)** via Node.js's `crypto` module.
+- The app uses a **4-digit numeric PIN** as the encryption key — only digits (0–9) are accepted.
+- The PIN is never stored by the application — it is the user's sole responsibility to remember it.
 - Always keep backups of important files before encrypting them.
 
 ---
@@ -205,7 +191,7 @@ Please make sure your code follows the existing style and is well-commented.
 
 ## License
 
-This project is open source. See the repository for license details.
+This project currently has no license declared. All rights are reserved by the author unless stated otherwise. If you wish to use or contribute to this project, please contact the repository owner.
 
 ---
 
